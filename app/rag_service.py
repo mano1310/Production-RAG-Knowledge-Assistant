@@ -4,7 +4,6 @@ import re
 from typing import List, Dict, Any
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
 from pypdf import PdfReader
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
@@ -83,7 +82,7 @@ def _load_index() -> List[Dict[str, Any]]:
             return []
 
 
-def _encode_texts(model: SentenceTransformer, texts: List[str]) -> np.ndarray:
+def _encode_texts(model: Any, texts: List[str]) -> np.ndarray:
     embeddings = model.encode(texts, convert_to_numpy=True, normalize_embeddings=True)
     return np.asarray(embeddings, dtype=np.float32)
 
@@ -98,6 +97,8 @@ def _compute_similarity(query_vector: np.ndarray, stored_vectors: np.ndarray) ->
 
 
 def build_index_if_needed() -> List[Dict[str, Any]]:
+    from sentence_transformers import SentenceTransformer
+
     _ensure_directories()
     index = []
 
@@ -135,6 +136,8 @@ def build_index_if_needed() -> List[Dict[str, Any]]:
 
 
 def ask_question(question: str) -> Dict[str, Any]:
+    from sentence_transformers import SentenceTransformer
+
     index = _load_index()
     if not index:
         return {
@@ -178,6 +181,8 @@ def list_documents() -> List[str]:
 
 
 def ingest_uploaded_file(file_obj) -> Dict[str, Any]:
+    from sentence_transformers import SentenceTransformer
+
     _ensure_directories()
     safe_name = os.path.basename(file_obj.filename).replace('..', '')
     if not safe_name:
