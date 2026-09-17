@@ -1,4 +1,5 @@
 import json
+import hashlib
 import os
 import re
 from typing import List, Dict, Any
@@ -11,7 +12,7 @@ DOCUMENT_DIR = os.path.join(DATA_DIR, 'documents')
 UPLOAD_DIR = os.path.join(DATA_DIR, 'uploads')
 INDEX_PATH = os.path.join(DATA_DIR, 'knowledge_index.json')
 
-EMBEDDING_MODEL = 'sentence-transformers/all-MiniLM-L6-v2'
+EMBEDDING_DIMENSIONS = 256
 
 
 def _ensure_directories():
@@ -82,9 +83,18 @@ def _load_index() -> List[Dict[str, Any]]:
             return []
 
 
-def _encode_texts(model: Any, texts: List[str]) -> np.ndarray:
-    embeddings = model.encode(texts, convert_to_numpy=True, normalize_embeddings=True)
-    return np.asarray(embeddings, dtype=np.float32)
+def _encode_texts(texts: List[str]) -> np.ndarray:
+    embeddings = np.zeros((len(texts), EMBEDDING_DIMENSIONS), dtype=np.float32)
+    for row, text in enumerate(texts):
+        tokens = re.findall(r'[a-z0-9]+', text.lower())
+        for token in tokens:
+            digest = hashlib.sha256(token.encode('utf-8')).digest()
+            index = int.from_bytes(digest[:4], 'big') % EMBEDDING_DIMENSIONS
+            embeddings[row, index] += 1.0
+        norm = np.linalg.norm(embeddings[row])
+        if norm:
+            embeddings[row] /= norm
+    return embeddings
 
 
 def _compute_similarity(query_vector: np.ndarray, stored_vectors: np.ndarray) -> np.ndarray:
@@ -97,8 +107,6 @@ def _compute_similarity(query_vector: np.ndarray, stored_vectors: np.ndarray) ->
 
 
 def build_index_if_needed() -> List[Dict[str, Any]]:
-    from sentence_transformers import SentenceTransformer
-
     _ensure_directories()
     index = []
 
@@ -120,9 +128,8 @@ def build_index_if_needed() -> List[Dict[str, Any]]:
         _save_index([])
         return []
 
-    model = SentenceTransformer(EMBEDDING_MODEL)
     texts = [item['text'] for item in index]
-    embeddings = _encode_texts(model, texts)
+    embeddings = _encode_texts(texts)
 
     stored = []
     for item, vector in zip(index, embeddings):
@@ -136,8 +143,6 @@ def build_index_if_needed() -> List[Dict[str, Any]]:
 
 
 def ask_question(question: str) -> Dict[str, Any]:
-    from sentence_transformers import SentenceTransformer
-
     index = _load_index()
     if not index:
         return {
@@ -145,8 +150,7 @@ def ask_question(question: str) -> Dict[str, Any]:
             'sources': []
         }
 
-    model = SentenceTransformer(EMBEDDING_MODEL)
-    query_vector = model.encode([question], convert_to_numpy=True, normalize_embeddings=True)[0]
+    query_vector = _encode_texts([question])[0]
     stored_vectors = np.asarray([np.asarray(item['embedding'], dtype=np.float32) for item in index], dtype=np.float32)
     scores = _compute_similarity(query_vector, stored_vectors)
     top_indices = np.argsort(scores)[::-1][:4]
@@ -181,8 +185,6 @@ def list_documents() -> List[str]:
 
 
 def ingest_uploaded_file(file_obj) -> Dict[str, Any]:
-    from sentence_transformers import SentenceTransformer
-
     _ensure_directories()
     safe_name = os.path.basename(file_obj.filename).replace('..', '')
     if not safe_name:
@@ -195,8 +197,7 @@ def ingest_uploaded_file(file_obj) -> Dict[str, Any]:
     existing = _load_index()
     updated = existing + new_chunks
 
-    model = SentenceTransformer(EMBEDDING_MODEL)
-    embeddings = _encode_texts(model, [chunk['text'] for chunk in updated])
+    embeddings = _encode_texts([chunk['text'] for chunk in updated])
     final_index = []
     for item, vector in zip(updated, embeddings):
         final_index.append({
