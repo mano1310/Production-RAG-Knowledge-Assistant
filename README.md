@@ -213,6 +213,16 @@ Then open:
 http://localhost:5000
 ```
 
+## Free deployment with Render
+
+This repository includes a `render.yaml` Blueprint for Render's free web service tier.
+
+1. Open the Render dashboard and choose **New > Blueprint**.
+2. Connect the `mano1310/Production-RAG-Knowledge-Assistant` repository.
+3. Select the `main` branch and apply the Blueprint.
+
+Render installs the dependencies and starts the app with Gunicorn. The free service may sleep after inactivity and uploaded files are not persistent across redeploys.
+
 ## Example questions
 
 - What is the purpose of this knowledge assistant?
