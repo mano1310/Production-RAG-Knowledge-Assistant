@@ -1,0 +1,29 @@
+Production RAG Knowledge Assistant
+
+This knowledge assistant is designed to answer questions using local business or project documents.
+
+Core idea:
+- The system stores documents in a vector database after converting them into embeddings.
+- When a user asks a question, the assistant finds the most relevant document chunks.
+- It then uses those chunks to ground the answer and reduces hallucination.
+
+Use cases:
+- Internal knowledge base for a startup.
+- HR and policy document assistant.
+- Customer support Q&A over FAQs and product documents.
+- Research assistant for PDFs, notes, and project reports.
+
+Best practices:
+- Keep documents clean and structured.
+- Split large documents into meaningful chunks.
+- Use metadata like source, date, and category.
+- Add a human review loop for important decisions.
+- Monitor answer quality with real user feedback.
+
+Career advice for AI/ML engineers:
+- Build projects that show end-to-end thinking from data intake to inference and deployment.
+- Learn how to combine retrieval, prompt design, evaluation, and monitoring.
+- Showcase this project in GitHub with clear README, architecture notes, and setup steps.
+- Practice explaining your work to both technical and non-technical users.
+
+This project demonstrates how an AI/ML engineer can turn raw company knowledge into a useful assistant.

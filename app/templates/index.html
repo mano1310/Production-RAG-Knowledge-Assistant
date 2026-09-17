@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Production RAG Knowledge Assistant</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 30px;
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+        .container {
+            max-width: 1000px;
+            margin: auto;
+        }
+        .card {
+            background: #111827;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        textarea, input, button {
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 10px;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #475569;
+            background: #0b1220;
+            color: #e2e8f0;
+        }
+        button {
+            background: #2563eb;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .response {
+            white-space: pre-wrap;
+            margin-top: 15px;
+            line-height: 1.6;
+        }
+        .sources {
+            margin-top: 15px;
+        }
+        .source-item {
+            background: #1e293b;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 8px;
+        }
+        .files {
+            list-style: none;
+            padding-left: 0;
+        }
+        .files li {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Production RAG Knowledge Assistant</h1>
+
+        <div class="card">
+            <h2>Ask a question</h2>
+            <textarea id="question" rows="5" placeholder="Ask about internal docs, FAQs, policies, or project notes..."></textarea>
+            <button id="askBtn">Ask assistant</button>
+            <div id="response" class="response">Your answer will appear here.</div>
+            <div id="sources" class="sources"></div>
+        </div>
+
+        <div class="card">
+            <h2>Upload a document</h2>
+            <input id="documentInput" type="file" />
+            <button id="uploadBtn">Upload and index</button>
+            <div id="uploadStatus"></div>
+        </div>
+
+        <div class="card">
+            <h2>Indexed knowledge files</h2>
+            <ul class="files">
+                {% for doc in documents %}
+                    <li>{{ doc }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const askBtn = document.getElementById('askBtn');
+        const uploadBtn = document.getElementById('uploadBtn');
+
+        askBtn.addEventListener('click', async () => {
+            const question = document.getElementById('question').value;
+            const responseBox = document.getElementById('response');
+            const sourcesBox = document.getElementById('sources');
+
+            responseBox.textContent = 'Thinking...';
+            sourcesBox.innerHTML = '';
+
+            const res = await fetch('/ask', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ question })
+            });
+
+            const data = await res.json();
+            responseBox.textContent = data.answer || 'No answer returned.';
+
+            if (Array.isArray(data.sources) && data.sources.length) {
+                sourcesBox.innerHTML = '<h3>Sources</h3>' + data.sources.map(src => `
+                    <div class="source-item">
+                        <strong>${src.source || 'Unknown source'}</strong>
+                        <div>${(src.content || '').slice(0, 400)}</div>
+                    </div>
+                `).join('');
+            } else {
+                sourcesBox.innerHTML = '';
+            }
+        });
+
+        uploadBtn.addEventListener('click', async () => {
+            const input = document.getElementById('documentInput');
+            const status = document.getElementById('uploadStatus');
+
+            if (!input.files.length) {
+                status.textContent = 'Please choose a file first.';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', input.files[0]);
+            status.textContent = 'Uploading...';
+
+            const res = await fetch('/upload', { method: 'POST', body: formData });
+            const data = await res.json();
+            status.textContent = data.error || data.message || 'Upload finished.';
+            window.location.reload();
+        });
+    </script>
+</body>
+</html>
