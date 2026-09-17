@@ -17,7 +17,7 @@ When recruiters or hiring managers look at AI/ML portfolios, they usually want t
 
 This project demonstrates all of that in one app.
 
-## Main idea in plain English
+## Main idea
 
 Imagine your company has an internal knowledge base: policies, onboarding docs, product notes, support FAQs, or project reports. A normal chatbot may answer based on generic training data, which can be wrong or vague. A RAG assistant instead does this:
 
